@@ -1,4 +1,4 @@
-# mini-rag
+# LLA_QA_RAG
 
 This is a minimal implementation of the Retrieval-Augmented Generation (RAG) model for question answering.
 
