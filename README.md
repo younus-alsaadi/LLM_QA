@@ -24,6 +24,22 @@ This is a minimal implementation of the Retrieval-Augmented Generation (RAG) mod
 $ pip install -r requirements.txt
 ```
 
+## Run Docker Compose Services
+
+```bash
+$ cd docker
+$ cp .env.example .env
+```
+
+- update `.env` with your credentials
+
+
+
+```bash
+$ cd docker
+$ sudo docker compose up -d
+```
+
 ## Run the FastAPI server
 
 ```bash
