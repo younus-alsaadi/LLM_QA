@@ -30,8 +30,6 @@ async def upload_data(request:Request,project_id: str, file: UploadFile, app_set
 
     project=await project_model.get_project_or_create_one(project_id=project_id)
 
-
-
     data_controller=DataController()
 
     id_valid, result_single = data_controller.validate_uploaded_file(file=file)
