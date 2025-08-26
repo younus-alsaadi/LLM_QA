@@ -163,4 +163,5 @@ cython_debug/
 #.idea/
 
 docker/mongodb
-docker/.env
+docker/.env!/src/models/db_schemes/rag_qa/alembic.ini
+!/src/models/db_schemes/rag_qa/alembic.ini
