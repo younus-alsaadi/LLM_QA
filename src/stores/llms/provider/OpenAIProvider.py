@@ -2,6 +2,7 @@ from ..Interface_LLM import Interface_LLM
 from ..Enums_LLM import OpenAIEnums
 from openai import OpenAI
 import logging
+import httpx
 
 class OpenAIProvider(Interface_LLM):
     def __init__(self,  api_key: str, api_url: str=None,
@@ -19,9 +20,11 @@ class OpenAIProvider(Interface_LLM):
         self.generation_model_id = None
         self.embedding_model_id = None
         self.embedding_dimensions_size = None
+        http_client = httpx.Client(proxy="http://127.0.0.1:8080")  # httpx 0.27.x
 
         self.client = OpenAI(
             api_key=self.api_key,
+            http_client=http_client,
             base_url=self.api_url if self.api_url and len(self.api_url) else None, # User OpenAPI or OLLAMA
         )
 
@@ -96,7 +99,7 @@ class OpenAIProvider(Interface_LLM):
 
         return {
             "role": role,
-            'content': self.process_text(prompt),
+            'content': prompt,
         }
 
 
