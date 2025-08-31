@@ -15,6 +15,7 @@ from src.models.db_schemes import DataChunk, Asset
 from src.models.enum.AssetTypeEnum import AssetTypeEnum
 import os
 from bson.objectid import ObjectId
+from ..controllers import NLPController
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -36,7 +37,6 @@ async def upload_data(request:Request,project_id: int, file: UploadFile, app_set
     if not id_valid:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content=
         {"response":result_single})
-
 
 
     project_dir_path=ProjectController().get_project_path(project_id=project_id)
@@ -91,6 +91,13 @@ async def process_endpoint(request:Request,project_id: int, process_request: Pro
 
     project = await project_model.get_project_or_create_one(project_id=project_id)
 
+    nlp_controller = NLPController(
+        vectordb_client=request.app.vectordb_client,
+        generation_client=request.app.generation_client,
+        embedding_client=request.app.embedding_client,
+        template_parser=request.app.template_parser,
+    )
+
     asset_model = await AssetModel.create_instance(db_client=request.app.db_client)
 
     project_files_ids={}
@@ -109,7 +116,7 @@ async def process_endpoint(request:Request,project_id: int, process_request: Pro
             )
 
         project_files_ids = {
-            asset_record.asset_id[0] if isinstance(asset_record.asset_id, tuple) else asset_record.asset_id: asset_record.asset_name
+            asset_record.asset_id: asset_record.asset_name
         }
     else:
 
@@ -118,8 +125,8 @@ async def process_endpoint(request:Request,project_id: int, process_request: Pro
             asset_type=AssetTypeEnum.FILE.value)
 
         project_files_ids = {
-            record_project.asset_project_id if isinstance(record_project.asset_project_id, tuple) else record_project.asset_project_id: record_project.asset_name
-            for record_project in project_files
+            record.asset_id: record.asset_name
+            for record in project_files
         }
 
     if len(project_files_ids) == 0:
@@ -138,15 +145,23 @@ async def process_endpoint(request:Request,project_id: int, process_request: Pro
     chunk_model = await ChunkModel.create_instance(db_client=request.app.db_client)
 
     if do_reset == 1:
+        # delete associated vectors collection
+        collection_name = nlp_controller.create_collection_name(project_id=project.project_id)
+        _ = await request.app.vectordb_client.delete_collection(collection_name=collection_name)
+
         _ = await chunk_model.delete_chunks_by_project_id(
             project_id=project.project_id
         )
+
+
 
     logger.debug(f"len(project_files_ids)={len(project_files_ids)}")
 
     for asset_id, file_id in project_files_ids.items():
 
+        logger.debug("=" * 20)
         logger.debug(f"asset_id type = {type(asset_id)}, value = {asset_id} || file_id = {file_id}")
+        logger.debug("="*20)
 
         file_content=process_controller.get_file_content(file_id=file_id)
 

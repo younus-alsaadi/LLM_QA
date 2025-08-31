@@ -10,7 +10,7 @@ class DataController(BaseController):
 
     def __init__(self):
        super().__init__()
-       self.size_scale = 1048576  # convert MB to bytes
+       self.size_scale = 10048576  # convert MB to bytes
 
     def validate_uploaded_file(self, file: UploadFile):
 

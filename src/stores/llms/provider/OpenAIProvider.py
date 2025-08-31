@@ -3,6 +3,7 @@ from ..Enums_LLM import OpenAIEnums
 from openai import OpenAI
 import logging
 import httpx
+from typing import List, Union
 
 class OpenAIProvider(Interface_LLM):
     def __init__(self,  api_key: str, api_url: str=None,
@@ -20,13 +21,15 @@ class OpenAIProvider(Interface_LLM):
         self.generation_model_id = None
         self.embedding_model_id = None
         self.embedding_dimensions_size = None
-        http_client = httpx.Client(proxy="http://127.0.0.1:8080")  # httpx 0.27.x
+
+        http_client = httpx.Client(timeout=30.0)  # httpx 0.27.x
 
         self.client = OpenAI(
             api_key=self.api_key,
             http_client=http_client,
-            base_url=self.api_url if self.api_url and len(self.api_url) else None, # User OpenAPI or OLLAMA
+            base_url=self.api_url.rstrip("/") if self.api_url else None, # User OpenAPI or OLLAMA
         )
+
 
         self.enums = OpenAIEnums
 
@@ -74,12 +77,16 @@ class OpenAIProvider(Interface_LLM):
         return response.choices[0].message.content
 
 
-    def embed_text(self, text: str, document_type: str = None):
+    def embed_text(self, text: Union[str,List[str]], document_type: str = None):
 
 
         if not self.client or not self.embedding_model_id:
             self.logger.error("OpenAI client/model not set")
             return None
+
+        if isinstance(text, str):
+            text = [text]
+
 
         kwargs = {"model": self.embedding_model_id, "input": text}
 
@@ -93,7 +100,7 @@ class OpenAIProvider(Interface_LLM):
             self.logger.error("Error while embedding text with OpenAI")
             return None
 
-        return response.data[0].embedding
+        return [rec.embedding for rec in response.data]
 
     def construct_prompt(self, prompt: str, role: str):
 
